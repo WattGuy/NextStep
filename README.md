@@ -1,2 +1,1 @@
-NextStep
-Android game for my practice
+NextStep -> Match 3 android game for my practice
