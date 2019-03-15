@@ -5,6 +5,17 @@ TagManager:
   serializedVersion: 2
   tags:
   - Canvas
+  - Board
+  - Blue
+  - BlueBar
+  - Green
+  - LightGreen
+  - LightGreenBar
+  - Orange
+  - OrangeBar
+  - GreenBar
+  - Pink
+  - PinkBar
   layers:
   - Default
   - TransparentFX

@@ -10,6 +10,9 @@ public class Dot
     private SpriteRenderer sr;
     private BoxCollider2D collider;
     private Animation animation;
+    private HeroType? cacheht = null;
+    private DLCType? cachedt = null;
+    private DLCType dt = DLCType.NONE;
 
     public Dot(int x, int y, GameObject go, HeroType ht)
     {
@@ -20,7 +23,7 @@ public class Dot
         this.sr = go.GetComponent<SpriteRenderer>();
         this.collider = go.GetComponent<BoxCollider2D>();
         this.animation = go.GetComponent<Animation>();
-        this.ht = ht;
+        setType(ht, false);
 
     }
 
@@ -48,6 +51,31 @@ public class Dot
 
     }
 
+    public void setDLCType(DLCType dt) {
+
+        this.dt = dt;
+        sr.sprite = typeToSprite(ht, dt);
+
+    }
+
+    public DLCType getDLCType()
+    {
+        return dt;
+    }
+
+    public void setFaded() {
+
+        sr.color = new Color(255f, 255f, 255f, 0.5f);
+
+    }
+
+    public void setNormal()
+    {
+
+        sr.color = new Color(255f, 255f, 255f, 1f);
+
+    }
+
     public Animation getAnimation()
     {
 
@@ -58,6 +86,7 @@ public class Dot
     public void playPulse()
     {
 
+        animation.clip = animation.GetClip("Pulse");
         animation.Play();
 
     }
@@ -66,7 +95,7 @@ public class Dot
     {
 
         animation.Stop();
-        go.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+        go.transform.eulerAngles = new Vector3(0f, 0f, 0f);
 
     }
 
@@ -75,44 +104,191 @@ public class Dot
         return ht;
     }
 
-    public void setType(HeroType ht)
-    {
+    public void turnBack() {
 
-        sr.sprite = Dot.typeToSprite(ht);
-        this.ht = ht;
+        if (cacheht != null) {
+
+            setType((HeroType) cacheht, false);
+            cacheht = null;
+
+        }
+
+        if (cachedt != null)
+        {
+            setDLCType((DLCType) cachedt);
+            cachedt = null;
+
+        }
+
     }
 
-    public static Sprite typeToSprite(HeroType ht)
+    public void setType(HeroType ht, bool adjacent)
     {
 
-        if (ht == HeroType.APPLE)
+        sr.sprite = Dot.typeToSprite(ht, dt);
+        if (adjacent) {
+            this.cacheht = this.ht;
+            this.cachedt = this.dt;
+        }
+        this.ht = ht;
+        this.dt = DLCType.NONE;
+
+    }
+
+    public static Sprite typeToSprite(HeroType ht, DLCType dt)
+    {
+
+        if (ht == HeroType.BLUE)
         {
 
-            return Board.apple;
+            if (dt == DLCType.HORIZONTAL)
+            {
+
+                return Board.blue_horizontal;
+
+            }
+            else if (dt == DLCType.VERTICAL)
+            {
+
+                return Board.blue_vertical;
+
+            }
+            else if (dt == DLCType.BOMB)
+            {
+
+                return Board.blue_bomb;
+
+            } else if (dt == DLCType.ADJACENT) {
+
+                return Board.blue_adjacent;
+
+            }
+            else return Board.blue;
 
         }
-        else if (ht == HeroType.COCOS)
+        else if (ht == HeroType.GREEN)
         {
 
-            return Board.cocos;
+            if (dt == DLCType.HORIZONTAL)
+            {
+
+                return Board.green_horizontal;
+
+            }
+            else if (dt == DLCType.VERTICAL)
+            {
+
+                return Board.green_vertical;
+
+            }
+            else if (dt == DLCType.BOMB)
+            {
+
+                return Board.green_bomb;
+
+            }
+            else if (dt == DLCType.ADJACENT)
+            {
+
+                return Board.green_adjacent;
+
+            }
+            else return Board.green;
 
         }
-        else if (ht == HeroType.COOKIE)
+        else if (ht == HeroType.LIGHTGREEN)
         {
 
-            return Board.cookie;
+            if (dt == DLCType.HORIZONTAL)
+            {
+
+                return Board.lightgreen_horizontal;
+
+            }
+            else if (dt == DLCType.VERTICAL)
+            {
+
+                return Board.lightgreen_vertical;
+
+            }
+            else if (dt == DLCType.BOMB)
+            {
+
+                return Board.lightgreen_bomb;
+
+            }
+            else if (dt == DLCType.ADJACENT)
+            {
+
+                return Board.lightgreen_adjacent;
+
+            }
+            else return Board.lightgreen;
 
         }
-        else if (ht == HeroType.MILK)
+        else if (ht == HeroType.ORANGE)
         {
 
-            return Board.milk;
+            if (dt == DLCType.HORIZONTAL)
+            {
+
+                return Board.orange_horizontal;
+
+            }
+            else if (dt == DLCType.VERTICAL)
+            {
+
+                return Board.orange_vertical;
+
+            }
+            else if (dt == DLCType.BOMB)
+            {
+
+                return Board.orange_bomb;
+
+            }
+            else if (dt == DLCType.ADJACENT)
+            {
+
+                return Board.orange_adjacent;
+
+            }
+            else return Board.orange;
 
         }
-        else if (ht == HeroType.STAR)
+        else if (ht == HeroType.PINK)
         {
 
-            return Board.star;
+            if (dt == DLCType.HORIZONTAL)
+            {
+
+                return Board.pink_horizontal;
+
+            }
+            else if (dt == DLCType.VERTICAL)
+            {
+
+                return Board.pink_vertical;
+
+            }
+            else if (dt == DLCType.BOMB)
+            {
+
+                return Board.pink_bomb;
+
+            }
+            else if (dt == DLCType.ADJACENT)
+            {
+
+                return Board.pink_adjacent;
+
+            }
+            else return Board.pink;
+
+        }
+        else if (ht == HeroType.CONCRETE) {
+
+            return Board.concrete;
 
         }
         else
@@ -184,7 +360,7 @@ public class Dot
     public static float calculateY(int y)
     {
 
-        return y + (y * 2.5f) - 13.75f;
+        return y + (y * 2.5f) - 16.75f;
 
     }
 
@@ -203,31 +379,31 @@ public class Dot
         if (r <= 20)
         {
 
-            return HeroType.APPLE;
+            return HeroType.BLUE;
 
         }
         else if (r <= 40)
         {
 
-            return HeroType.COCOS;
+            return HeroType.GREEN;
 
         }
         else if (r <= 60)
         {
 
-            return HeroType.MILK;
+            return HeroType.LIGHTGREEN;
 
         }
         else if (r <= 80)
         {
 
-            return HeroType.COOKIE;
+            return HeroType.PINK;
 
         }
         else
         {
 
-            return HeroType.STAR;
+            return HeroType.ORANGE;
 
         }
 
