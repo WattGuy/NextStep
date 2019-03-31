@@ -1,54 +1,26 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
-public class ButtonClick : MonoBehaviour, IPointerClickHandler{
-
-    public static Dot last;
-    public static bool selecting = false;
-    public GameObject prefab;
-    public Camera cam;
-
-    public static Vector2 first;
-
-    void OnMouseDown() {
-
-        if ("Board" == name) {
-
-            Vector3 wp = cam.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 touchPos = new Vector2(wp.x, wp.y);
-
-            first = touchPos;
-
-
-
-        }
-
-    }
-
-    void Update() {
-
-
-
-    }
-
-    void OnMouseUp() {
-
-        if ("Board" == name)
-        {
-
-            //selecting = false;
-            //Debug.Log("BOARD UP");
-
-        }
-
-    }
+public class ButtonClick : MonoBehaviour, IPointerClickHandler {
 
     public void OnPointerClick(PointerEventData eventData)
     {
 
-        if ("Play" == name) {
+        if (tag == "LevelButton") {
+            Text t = transform.GetChild(0).GetComponent<Text>();
+            int? i = tryParse(t.text);
 
+            if (i == null) return;
+
+            TextAsset ass = Levels.levels[(int)i];
+            LevelData d = Saver.loadLevel(ass.text);
+
+            if (d == null) return;
+
+            Levels.level = d;
             SceneManager.LoadScene("game");
 
         }
@@ -74,6 +46,45 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler{
             SceneManager.LoadScene("menu");
 
         }
+        else if ("Levels" == name || "Quit" == name)
+        {
+
+            SceneManager.LoadScene("levels");
+
+        }
+        else if ("Restart" == name)
+        {
+
+            SceneManager.LoadScene("game");
+
+        }
+        else if ("Pause" == name)
+        {
+
+            Board.instance.popups[PopupType.PAUSE].activate();
+            Board.paused = true;
+
+        }
+        else if ("Continue" == name) {
+
+            Board.instance.popups[PopupType.PAUSE].unactivate();
+            Board.paused = false;
+
+        }
+
+
+    }
+
+    private int? tryParse(string s) {
+
+        try {
+
+            return int.Parse(s);
+
+        }
+        catch (Exception e) {}
+
+        return null;
 
     }
 

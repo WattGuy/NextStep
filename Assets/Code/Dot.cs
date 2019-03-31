@@ -13,6 +13,7 @@ public class Dot
     private HeroType? cacheht = null;
     private DLCType? cachedt = null;
     private DLCType dt = DLCType.NONE;
+    private Vector3? point = null;
 
     public Dot(int x, int y, GameObject go, HeroType ht)
     {
@@ -35,6 +36,28 @@ public class Dot
     public int getY()
     {
         return y;
+    }
+
+    public void setX(int x)
+    {
+        this.x = x;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public Vector3? getPoint()
+    {
+        return point;
+    }
+
+    public void setPoint(Vector3? v) {
+        this.point = v;
+    }
+
+    public void destroy() {
+        GameObject.Destroy(go);
     }
 
     public GameObject getObject()
@@ -137,167 +160,7 @@ public class Dot
 
     public static Sprite typeToSprite(HeroType ht, DLCType dt)
     {
-
-        if (ht == HeroType.BLUE)
-        {
-
-            if (dt == DLCType.HORIZONTAL)
-            {
-
-                return Board.blue_horizontal;
-
-            }
-            else if (dt == DLCType.VERTICAL)
-            {
-
-                return Board.blue_vertical;
-
-            }
-            else if (dt == DLCType.BOMB)
-            {
-
-                return Board.blue_bomb;
-
-            } else if (dt == DLCType.ADJACENT) {
-
-                return Board.blue_adjacent;
-
-            }
-            else return Board.blue;
-
-        }
-        else if (ht == HeroType.GREEN)
-        {
-
-            if (dt == DLCType.HORIZONTAL)
-            {
-
-                return Board.green_horizontal;
-
-            }
-            else if (dt == DLCType.VERTICAL)
-            {
-
-                return Board.green_vertical;
-
-            }
-            else if (dt == DLCType.BOMB)
-            {
-
-                return Board.green_bomb;
-
-            }
-            else if (dt == DLCType.ADJACENT)
-            {
-
-                return Board.green_adjacent;
-
-            }
-            else return Board.green;
-
-        }
-        else if (ht == HeroType.LIGHTGREEN)
-        {
-
-            if (dt == DLCType.HORIZONTAL)
-            {
-
-                return Board.lightgreen_horizontal;
-
-            }
-            else if (dt == DLCType.VERTICAL)
-            {
-
-                return Board.lightgreen_vertical;
-
-            }
-            else if (dt == DLCType.BOMB)
-            {
-
-                return Board.lightgreen_bomb;
-
-            }
-            else if (dt == DLCType.ADJACENT)
-            {
-
-                return Board.lightgreen_adjacent;
-
-            }
-            else return Board.lightgreen;
-
-        }
-        else if (ht == HeroType.ORANGE)
-        {
-
-            if (dt == DLCType.HORIZONTAL)
-            {
-
-                return Board.orange_horizontal;
-
-            }
-            else if (dt == DLCType.VERTICAL)
-            {
-
-                return Board.orange_vertical;
-
-            }
-            else if (dt == DLCType.BOMB)
-            {
-
-                return Board.orange_bomb;
-
-            }
-            else if (dt == DLCType.ADJACENT)
-            {
-
-                return Board.orange_adjacent;
-
-            }
-            else return Board.orange;
-
-        }
-        else if (ht == HeroType.PINK)
-        {
-
-            if (dt == DLCType.HORIZONTAL)
-            {
-
-                return Board.pink_horizontal;
-
-            }
-            else if (dt == DLCType.VERTICAL)
-            {
-
-                return Board.pink_vertical;
-
-            }
-            else if (dt == DLCType.BOMB)
-            {
-
-                return Board.pink_bomb;
-
-            }
-            else if (dt == DLCType.ADJACENT)
-            {
-
-                return Board.pink_adjacent;
-
-            }
-            else return Board.pink;
-
-        }
-        else if (ht == HeroType.CONCRETE) {
-
-            return Board.concrete;
-
-        }
-        else
-        {
-
-            return null;
-
-        }
-
+        return Board.rs.sprites[new System.Collections.Generic.KeyValuePair<HeroType, DLCType>(ht, dt)];
     }
 
     public static Dot has(Vector2 click)

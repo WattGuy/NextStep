@@ -16,6 +16,12 @@ TagManager:
   - GreenBar
   - Pink
   - PinkBar
+  - TargetBars
+  - StepsCounter
+  - Levels
+  - Energy
+  - LevelButton
+  - PopupCanvas
   layers:
   - Default
   - TransparentFX

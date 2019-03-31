@@ -125,7 +125,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 2
 --- !u!224 &224017165015052494
 RectTransform:
   m_ObjectHideFlags: 1
@@ -134,7 +134,7 @@ RectTransform:
   m_GameObject: {fileID: 1869438668785514}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 25.09375}
-  m_LocalScale: {x: 2.1, y: 2.1, z: 1}
+  m_LocalScale: {x: 2.35, y: 2.35, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0

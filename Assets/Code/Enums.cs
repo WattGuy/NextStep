@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public enum HeroType
 {
@@ -8,7 +9,6 @@ public enum HeroType
     PINK,
     ORANGE,
     LIGHTGREEN,
-    RAINBOW,
     CONCRETE,
     NONE
 
@@ -25,19 +25,29 @@ public enum DLCType
 
 }
 
+public enum PopupType {
+
+    PAUSE,
+    LOSE,
+    WIN
+
+}
+
 public class TypeUtils{
 
-    public static string GetDirectory(HeroType ht) {
+    public static HeroType? getType(string s) {
 
-        if (ht != HeroType.CONCRETE) {
+        try
+        {
+            return (HeroType) Enum.Parse(typeof(HeroType), s);
+        }
+        catch (Exception ignored) { }
 
-            return "Pieces/" + getName(ht) + " Piece";
-
-        } else return "Pieces/" + getName(ht);
+        return null;
 
     }
 
-    private static string getName(HeroType ht) {
+    public static string getName(HeroType ht) {
 
         if (ht == HeroType.BLUE)
         {
@@ -104,7 +114,17 @@ public class TypeUtils{
             return "Pieces/" + getName(ht) + " Bomb";
 
         }
-        else return "";
+        else {
+
+            if (ht != HeroType.CONCRETE)
+            {
+
+                return "Pieces/" + getName(ht) + " Piece";
+
+            }
+            else return "Pieces/" + getName(ht);
+
+        }
 
     }
 

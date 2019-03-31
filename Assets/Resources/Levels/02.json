@@ -1,0 +1,23 @@
+{
+  "dots": [
+    {
+      "position": "5:5",
+      "type": "BLUE"
+    },
+    {
+      "position": "5:6",
+      "type": "BLUE"
+    }
+  ],
+  "targets": [
+    {
+      "type": "BLUE",
+      "target": 10
+    },
+    {
+      "type": "GREEN",
+      "target": 10
+    }
+  ],
+  "steps": 20
+}

@@ -1,0 +1,51 @@
+{
+  "dots": [
+    {
+      "position": "1:1",
+      "type": "CONCRETE"
+    },
+    {
+      "position": "1:2",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "2:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "3:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "4:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "5:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "6:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "7:1",
+      "type": "CONCRETE"
+    },
+	{
+      "position": "7:2",
+      "type": "CONCRETE"
+    }
+  ],
+  "targets": [
+    {
+      "type": "BLUE",
+      "target": 10
+    },
+    {
+      "type": "GREEN",
+      "target": 10
+    }
+  ],
+  "steps": 3
+}

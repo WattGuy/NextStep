@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,55 +18,29 @@ public class Board : MonoBehaviour {
     public static GameObject circle;
 
     public static List<Circle> circles = new List<Circle>();
-
-    public static int blueCounter = 0;
-    public static int greenCounter = 0;
-    public static int orangeCounter = 0;
-    public static int lightgreenCounter = 0;
-    public static int pinkCounter = 0;
-
-    public static Sprite blue;
-    public static Sprite green;
-    public static Sprite lightgreen;
-    public static Sprite pink;
-    public static Sprite orange;
-
-    public static Sprite concrete;
-
-    public static Sprite blue_horizontal;
-    public static Sprite blue_vertical;
-    public static Sprite blue_bomb;
-    public static Sprite blue_adjacent;
-
-    public static Sprite green_horizontal;
-    public static Sprite green_vertical;
-    public static Sprite green_bomb;
-    public static Sprite green_adjacent;
-
-    public static Sprite orange_horizontal;
-    public static Sprite orange_vertical;
-    public static Sprite orange_bomb;
-    public static Sprite orange_adjacent;
-
-    public static Sprite lightgreen_horizontal;
-    public static Sprite lightgreen_vertical;
-    public static Sprite lightgreen_bomb;
-    public static Sprite lightgreen_adjacent;
-
-    public static Sprite pink_horizontal;
-    public static Sprite pink_vertical;
-    public static Sprite pink_bomb;
-    public static Sprite pink_adjacent;
+    public Dictionary<HeroType, Counter> counters = null;
+    public Dictionary<HeroType, Target> targets = null;
+    public Dictionary<PopupType, Popup> popups = null;
 
     public static int width;
     public static int height;
 
+    public GameObject _target;
+    public static GameObject target;
+
+    public static float y_difference;
+
     public float lineWidth = 2;
 
-    public int need = 20;
+    public static int need = 20;
 
     private SpriteRenderer sr;
 
+    private GridLayoutGroup glg;
+
+    public static List<Dot> queue = new List<Dot>();
+    public static int counter = 0;
+    public static Vector3[,] positions;
     public static Dot[,] dots;
 
     public static GameData data;
@@ -75,242 +50,121 @@ public class Board : MonoBehaviour {
     public static List<GameObject> lines = new List<GameObject>();
     public static bool staying = false;
 
+    public static Board instance = null;
+    public static bool paused = false;
+
+    public static Resources rs;
+
+    public int default_steps = 30;
+    public StepsCounter steps = null;
+
+    public static List<Dot> otstoi = new List<Dot>();
+
     void Start () {
+        instance = this;
+        paused = false;
         selected = new List<Dot>();
         selecting = false;
         staying = false;
 
         circle = _circle;
-
-        blue = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.BLUE));
-        pink = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.PINK));
-        lightgreen = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.LIGHTGREEN));
-        green = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.GREEN));
-        orange = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.ORANGE));
-
-        concrete = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.CONCRETE));
-
-        blue_horizontal = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.BLUE, DLCType.HORIZONTAL));
-        blue_vertical = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.BLUE, DLCType.VERTICAL));
-        blue_bomb = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.BLUE, DLCType.BOMB));
-        blue_adjacent = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.BLUE, DLCType.ADJACENT));
-
-        lightgreen_horizontal = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.LIGHTGREEN, DLCType.HORIZONTAL));
-        lightgreen_vertical = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.LIGHTGREEN, DLCType.VERTICAL));
-        lightgreen_bomb = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.LIGHTGREEN, DLCType.BOMB));
-        lightgreen_adjacent = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.LIGHTGREEN, DLCType.ADJACENT));
-
-        green_horizontal = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.GREEN, DLCType.HORIZONTAL));
-        green_vertical = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.GREEN, DLCType.VERTICAL));
-        green_bomb = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.GREEN, DLCType.BOMB));
-        green_adjacent = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.GREEN, DLCType.ADJACENT));
-
-        orange_horizontal = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.ORANGE, DLCType.HORIZONTAL));
-        orange_vertical = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.ORANGE, DLCType.VERTICAL));
-        orange_bomb = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.ORANGE, DLCType.BOMB));
-        orange_adjacent = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.ORANGE, DLCType.ADJACENT));
-
-        pink_horizontal = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.PINK, DLCType.HORIZONTAL));
-        pink_vertical = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.PINK, DLCType.VERTICAL));
-        pink_bomb = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.PINK, DLCType.BOMB));
-        pink_adjacent = Resources.Load<Sprite>(TypeUtils.GetDirectory(HeroType.PINK, DLCType.ADJACENT));
+        target = _target;
 
         data = Saver.load();
-        activateBars();
+        rs = new Resources();
+
+        if (counters == null) {
+            counters = new Dictionary<HeroType, Counter>();
+
+            foreach (HeroType ht in Enum.GetValues(typeof(HeroType)).Cast<HeroType>())
+            {
+
+                if (ht != HeroType.NONE && ht != HeroType.CONCRETE)
+                {
+
+                    counters.Add(ht, new Counter(ht));
+
+                }
+
+            }
+
+        }
 
         width = _width;
         height = _height;
 
+        if (popups == null) {
+            popups = new Dictionary<PopupType, Popup>();
+
+            foreach (PopupType pt in Enum.GetValues(typeof(PopupType)).Cast<PopupType>())
+            {
+
+                popups.Add(pt, new Popup(pt));
+
+            }
+
+        }
+
+        if (Levels.level != null)
+        {
+            targets = new Dictionary<HeroType, Target>();
+            List<HeroType> was = new List<HeroType>();
+
+            foreach (TargetData t in Levels.level.targets)
+            {
+                HeroType? ht = t.getType();
+                if (ht == null) continue;
+
+                if (was.Contains((HeroType)ht)) continue;
+                targets.Add((HeroType)ht, new Target((HeroType)ht, t.target));
+                was.Add((HeroType)ht);
+
+            }
+
+            steps = new StepsCounter(Levels.level.steps);
+
+        }
+        else {
+
+            steps = new StepsCounter(default_steps);
+
+        }
+
+        glg = GameObject.FindGameObjectWithTag("Board").GetComponent<GridLayoutGroup>() as GridLayoutGroup;
+
         sr = dot.GetComponent<SpriteRenderer>() as SpriteRenderer;
         dots = new Dot[width, height];
+        positions = new Vector3[width, height + 1];
         Setup();
 	}
 
-    private void checkBar(HeroType ht) {
+    private bool allTargetsIsCompleted() {
 
-        if (ht == HeroType.BLUE) {
-            DLCType? t = getType(data.blue);
-
-            if (t != null) {
-
-                GameObject.FindGameObjectWithTag("BlueBar").GetComponent<Image>().fillAmount =  ((blueCounter % need) / (need / 100f)) / 100f;
-
-            }
-
-        }else if (ht == HeroType.GREEN)
+        if (targets != null)
         {
-            DLCType? t = getType(data.green);
 
-            if (t != null)
+            foreach (Target t in targets.Values)
             {
 
-                GameObject.FindGameObjectWithTag("GreenBar").GetComponent<Image>().fillAmount = ((greenCounter % need) / (need / 100f)) / 100f;
+                if (!t.isDone())
+                {
+
+                    return false;
+
+                }
 
             }
 
         }
-        else if (ht == HeroType.LIGHTGREEN)
-        {
-            DLCType? t = getType(data.lightgreen);
+        else return false;
 
-            if (t != null)
-            {
-
-                GameObject.FindGameObjectWithTag("LightGreenBar").GetComponent<Image>().fillAmount = ((lightgreenCounter % need) / (need / 100f)) / 100f;
-
-            }
-
-        }
-        else if (ht == HeroType.ORANGE)
-        {
-            DLCType? t = getType(data.orange);
-
-            if (t != null)
-            {
-
-                GameObject.FindGameObjectWithTag("OrangeBar").GetComponent<Image>().fillAmount = ((orangeCounter % need) / (need / 100f)) / 100f;
-
-            }
-
-
-        }
-        else if (ht == HeroType.PINK)
-        {
-            DLCType? t = getType(data.pink);
-
-            if (t != null)
-            {
-
-                GameObject.FindGameObjectWithTag("PinkBar").GetComponent<Image>().fillAmount = ((pinkCounter % need) / (need / 100f)) / 100f;
-
-            }
-
-
-        }
+        return true;
 
     }
 
-    private DLCType? getType(string s) {
+    private bool isLocked() {
 
-        try
-        {
-            return (DLCType) Enum.Parse(typeof(DLCType), s);
-        }
-        catch (Exception ignored) { }
-
-        return null;
-
-    }
-
-    private void activateBars() {
-
-        if (data.blue != "") {
-            DLCType? t = getType(data.blue);
-
-            if (t != null) {
-                Sprite s = Dot.typeToSprite(HeroType.BLUE, (DLCType)t);
-
-                GameObject go = GameObject.FindGameObjectWithTag("Blue");
-                Image img = go.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.4f);
-                img.sprite = s;
-
-                GameObject go2 = GameObject.FindGameObjectWithTag("BlueBar");
-                Image img2 = go2.GetComponent<Image>();
-                img2.color = new Color(1f, 1f, 1f, 1f);
-                img2.sprite = s;
-
-            }
-
-        }
-
-        if (data.green != "")
-        {
-            DLCType? t = getType(data.green);
-
-            if (t != null)
-            {
-                Sprite s = Dot.typeToSprite(HeroType.GREEN, (DLCType)t);
-
-                GameObject go = GameObject.FindGameObjectWithTag("Green");
-                Image img = go.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.4f);
-                img.sprite = s;
-
-                GameObject go2 = GameObject.FindGameObjectWithTag("GreenBar");
-                Image img2 = go2.GetComponent<Image>();
-                img2.color = new Color(1f, 1f, 1f, 1f);
-                img2.sprite = s;
-
-            }
-
-        }
-
-        if (data.lightgreen != "")
-        {
-            DLCType? t = getType(data.lightgreen);
-
-            if (t != null)
-            {
-                Sprite s = Dot.typeToSprite(HeroType.LIGHTGREEN, (DLCType)t);
-
-                GameObject go = GameObject.FindGameObjectWithTag("LightGreen");
-                Image img = go.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.4f);
-                img.sprite = s;
-
-                GameObject go2 = GameObject.FindGameObjectWithTag("LightGreenBar");
-                Image img2 = go2.GetComponent<Image>();
-                img2.color = new Color(1f, 1f, 1f, 1f);
-                img2.sprite = s;
-
-            }
-
-        }
-
-        if (data.orange != "")
-        {
-            DLCType? t = getType(data.orange);
-
-            if (t != null)
-            {
-                Sprite s = Dot.typeToSprite(HeroType.ORANGE, (DLCType)t);
-
-                GameObject go = GameObject.FindGameObjectWithTag("Orange");
-                Image img = go.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.4f);
-                img.sprite = s;
-
-                GameObject go2 = GameObject.FindGameObjectWithTag("OrangeBar");
-                Image img2 = go2.GetComponent<Image>();
-                img2.color = new Color(1f, 1f, 1f, 1f);
-                img2.sprite = s;
-
-            }
-
-        }
-
-        if (data.pink != "")
-        {
-            DLCType? t = getType(data.pink);
-
-            if (t != null)
-            {
-                Sprite s = Dot.typeToSprite(HeroType.PINK, (DLCType)t);
-
-                GameObject go = GameObject.FindGameObjectWithTag("Pink");
-                Image img = go.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.4f);
-                img.sprite = s;
-
-                GameObject go2 = GameObject.FindGameObjectWithTag("PinkBar");
-                Image img2 = go2.GetComponent<Image>();
-                img2.color = new Color(1f, 1f, 1f, 1f);
-                img2.sprite = s;
-
-            }
-
-        }
+        return allTargetsIsCompleted() || steps.isLocked() || paused;
 
     }
 
@@ -333,15 +187,66 @@ public class Board : MonoBehaviour {
                 go.name = "(" + x + ";" + y + ")";
                 dots[x, y] = new Dot(x, y, go, ht);
 
-                if (x == 5 && y == 5) {
+            }
 
-                    dots[5, 5].setDLCType(DLCType.ADJACENT);
+        }
 
-                }
+        glg.CalculateLayoutInputHorizontal();
+        glg.CalculateLayoutInputVertical();
+        glg.SetLayoutHorizontal();
+        glg.SetLayoutVertical();
+
+        for (int x = 0; x < width; x++)
+        {
+
+            for (int y = 0; y < height; y++)
+            {
+
+                positions[x, y] = new Vector3(dots[x, y].getObject().transform.position.x, dots[x, y].getObject().transform.position.y, dots[x, y].getObject().transform.position.z);
 
             }
 
         }
+
+        y_difference = positions[0, height - 1].y - positions[0, height - 2].y;
+
+        if (Levels.level == null) return;
+        else {
+
+            foreach (DotData d in Levels.level.dots) {
+                string[] s = d.position.Split(':');
+                if (s.Length < 2) continue;
+
+                int? x = tryParse(s[0]);
+                if (x == null) continue;
+
+                int? y = tryParse(s[1]);
+                if (y == null) continue;
+
+                if (x > width - 1 || y > height - 1) continue;
+                HeroType? ht = d.getType();
+                if (ht == null) continue;
+
+                dots[(int)x, (int)y].setType((HeroType) ht, false);
+
+            }
+
+        }
+
+    }
+
+    private int? tryParse(string s)
+    {
+
+        try
+        {
+
+            return int.Parse(s);
+
+        }
+        catch (Exception e) { }
+
+        return null;
 
     }
 
@@ -461,52 +366,155 @@ public class Board : MonoBehaviour {
 
     }
 
-    public void dlc(Dot d) {
+    public static List<Dot> activated = new List<Dot>();
 
-        if (d.getDLCType() == DLCType.VERTICAL)
-        {
-            List<Dot> ds = getVerticalDots(d);
+    private bool hasUnactivated() {
 
-            foreach (Dot i in ds)
-            {
+        foreach (Circle c in circles) {
 
-                circles.Add(new Circle(i, d, true));
+            if (c.getAddict().getDLCType() != DLCType.ADJACENT && c.getDot().getDLCType() != DLCType.NONE && c.getDot().getDLCType() != DLCType.ADJACENT && !activated.Contains(c.getDot())) {
 
-            }
-
-        }else if (d.getDLCType() == DLCType.HORIZONTAL)
-        {
-            List<Dot> ds = getHorizontalDots(d);
-
-            foreach (Dot i in ds)
-            {
-
-                circles.Add(new Circle(i, d, true));
+                return true;
 
             }
 
         }
-        else if (d.getDLCType() == DLCType.BOMB)
-        {
-            List<Dot> ds = getAreaDots(d);
 
-            foreach (Dot i in ds)
-            {
+        return false;
 
-                circles.Add(new Circle(i, d, true));
+    }
+
+    public void updateCircles() {
+        activated.Clear();
+        List<Circle> remove = new List<Circle>();
+
+        foreach (Circle c in circles) {
+
+            if (c.getAddict().getDLCType() != DLCType.ADJACENT) {
+
+                c.destroy();
+                remove.Add(c);
 
             }
 
         }
-        else if (d.getDLCType() == DLCType.ADJACENT)
+
+        foreach(Circle c in remove){
+
+            circles.Remove(c);
+
+        }
+
+        foreach (Dot d in selected) {
+
+            if (d.getDLCType() != DLCType.NONE && d.getDLCType() != DLCType.ADJACENT) {
+
+                dlc(d, selected[selected.Count - 1]);
+                activated.Add(d);
+
+            }
+
+        }
+
+        while (hasUnactivated()) {
+
+            foreach (Circle c in circles)
+            {
+
+                if (c.getAddict().getDLCType() != DLCType.ADJACENT && c.getDot().getDLCType() != DLCType.NONE && c.getDot().getDLCType() != DLCType.ADJACENT && !activated.Contains(c.getDot()))
+                {
+
+                    dlc(c.getDot());
+                    activated.Add(c.getDot());
+                    break;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    public void dlc(Dot addict) {
+
+        dlc(addict, null);
+
+    }
+
+    public void dlc(Dot addict, Dot d) {
+
+        if (addict.getDLCType() == DLCType.VERTICAL)
         {
-            List<Dot> ds = getAreaDots(d);
+            List<Dot> ds;
+
+            if (d != null) {
+
+                ds = getVerticalDots(d);
+
+            } else ds = getVerticalDots(addict);
 
             foreach (Dot i in ds)
             {
 
-                i.setType(d.getType(), true);
-                circles.Add(new Circle(i, d, false));
+                circles.Add(new Circle(i, addict, true));
+
+            }
+
+        }else if (addict.getDLCType() == DLCType.HORIZONTAL)
+        {
+            List<Dot> ds;
+            if (d != null)
+            {
+
+                ds = getHorizontalDots(d);
+
+            }
+            else ds = getHorizontalDots(addict);
+
+            foreach (Dot i in ds)
+            {
+
+                circles.Add(new Circle(i, addict, true));
+
+            }
+
+        }
+        else if (addict.getDLCType() == DLCType.BOMB)
+        {
+            List<Dot> ds;
+            if (d != null)
+            {
+
+                ds = getAreaDots(d);
+
+            }
+            else ds = getAreaDots(addict);
+
+            foreach (Dot i in ds)
+            {
+
+                circles.Add(new Circle(i, addict, true));
+
+            }
+
+        }
+        else if (addict.getDLCType() == DLCType.ADJACENT)
+        {
+            List<Dot> ds;
+            if (d != null)
+            {
+
+                ds = getAreaDots(d);
+
+            }
+            else ds = getAreaDots(addict);
+
+            foreach (Dot i in ds)
+            {
+
+                i.setType(addict.getType(), true);
+                circles.Add(new Circle(i, addict, false));
 
             }
 
@@ -516,7 +524,7 @@ public class Board : MonoBehaviour {
 
     void OnMouseDown() {
 
-        if (!selecting)
+        if (!selecting && !isLocked())
         {
             Dot d = Dot.has(GetMouseCameraPoint());
             if (d == null || d.getType() == HeroType.NONE || d.getType() == HeroType.CONCRETE) return;
@@ -525,6 +533,7 @@ public class Board : MonoBehaviour {
             selected.Add(d);
             d.playPulse();
             dlc(d);
+            updateCircles();
             selecting = true;
             staying = true;
             fading();
@@ -567,51 +576,99 @@ public class Board : MonoBehaviour {
 
         if (selecting) {
             Dot d = Dot.has(GetMouseCameraPoint());
-            if (d == null) return;
-            Dot last = selected[selected.Count - 1];
 
-            if (d != last && staying){
+            if (d != null) {
 
-                staying = false;
+                Dot last = selected[selected.Count - 1];
 
-            }
+                if (d != last && staying)
+                {
 
-            if (selected.Count >= 2 && d == selected[selected.Count - 2] && !staying) {
-
-                selected.Remove(last);
-                last.stopPulse();
-
-                drawLines();
-
-                if (selected.Count <= 0) {
-
-                    selecting = false;
+                    staying = false;
 
                 }
 
-                removeAddictedCircles(last);
+                if (selected.Count >= 2 && d == selected[selected.Count - 2] && !staying)
+                {
 
-                fading();
+                    selected.Remove(last);
+                    last.stopPulse();
 
-                Debug.Log(d.getX() + ":" + d.getY() + " BACKED");
+                    drawLines();
 
-            } else if (d != last && d.getType() == last.getType() && !selected.Contains(d) && Dot.inRadius(last, d)) {
-                Debug.Log(d.getX() + ":" + d.getY() + " ADDED");
+                    if (selected.Count <= 0)
+                    {
 
-                selected.Add(d);
-                d.playPulse();
-                staying = true;
+                        selecting = false;
 
-                dlc(d);
+                    }
 
-                drawLines();
-                fading();
+                    if (last.getDLCType() == DLCType.ADJACENT) {
+
+                        removeAddictedCircles(last);
+
+                    }else updateCircles();
+
+                    fading();
+
+                    Debug.Log(d.getX() + ":" + d.getY() + " BACKED");
+
+                }
+                else if (d != last && d.getType() == last.getType() && !selected.Contains(d) && Dot.inRadius(last, d))
+                {
+                    Debug.Log(d.getX() + ":" + d.getY() + " ADDED");
+
+                    selected.Add(d);
+                    d.playPulse();
+                    staying = true;
+
+                    dlc(d);
+                    updateCircles();
+
+                    drawLines();
+                    fading();
+
+                }
 
             }
 
         }
 
         regen();
+
+        if (queue.Count > 0)
+        {
+            List<Dot> remove = new List<Dot>();
+
+            foreach (Dot d in queue)
+            {
+                Vector3? down = d.getPoint();
+
+                if (down == null || d.getObject() == null) {
+
+                    remove.Add(d);
+                    continue;
+
+                }
+
+                if (Vector3.Distance(d.getObject().transform.position, (Vector3)down).ToString("0.00") == "0.00") {
+
+                    remove.Add(d);
+                    continue;
+
+                }
+
+                d.getObject().transform.position = Vector3.LerpUnclamped(d.getObject().transform.position, (Vector3) down, 5f * Time.deltaTime);
+
+            }
+
+            foreach (Dot d in remove) {
+
+                queue.Remove(d);
+
+            }
+
+        }
 
     }
 
@@ -650,6 +707,16 @@ public class Board : MonoBehaviour {
 
     }
 
+    private void checkForComplete() {
+
+        if (allTargetsIsCompleted()) {
+
+            popups[PopupType.WIN].activate();
+
+        }
+
+    }
+
     void OnMouseUp() {
 
         if (selecting)
@@ -668,39 +735,20 @@ public class Board : MonoBehaviour {
             if (selected.Count >= 3)
             {
 
-                if (selected[0].getType() == HeroType.BLUE)
-                {
+                if (counters != null && counters.ContainsKey(selected[0].getType())) {
 
-                    blueCounter += selected.Count;
-                    checkBar(selected[0].getType());
-
-                }
-                else if (selected[0].getType() == HeroType.GREEN)
-                {
-
-                    greenCounter += selected.Count;
-                    checkBar(selected[0].getType());
+                    Counter c = counters[selected[0].getType()];
+                    c.counter += selected.Count;
+                    c.update();
 
                 }
-                else if (selected[0].getType() == HeroType.LIGHTGREEN)
-                {
 
-                    lightgreenCounter += selected.Count;
-                    checkBar(selected[0].getType());
+                if (targets != null && targets.ContainsKey(selected[0].getType())) {
 
-                }
-                else if (selected[0].getType() == HeroType.ORANGE)
-                {
-
-                    orangeCounter += selected.Count;
-                    checkBar(selected[0].getType());
-
-                }
-                else if (selected[0].getType() == HeroType.PINK)
-                {
-
-                    pinkCounter += selected.Count;
-                    checkBar(selected[0].getType());
+                    Target t = targets[selected[0].getType()];
+                    t.minus(selected.Count);
+                    t.update();
+                    checkForComplete();
 
                 }
 
@@ -712,6 +760,10 @@ public class Board : MonoBehaviour {
 
                 }
 
+                steps.minus(1);
+                steps.update();
+                checkForLose();
+
             }
 
             selected.Clear();
@@ -719,6 +771,12 @@ public class Board : MonoBehaviour {
 
             drawLines();
             fading();
+
+            foreach (Counter c in counters.Values) {
+
+                c.check();
+
+            }
 
             Debug.Log("FINISH");
 
@@ -733,9 +791,6 @@ public class Board : MonoBehaviour {
         return ray.origin + ray.direction * depth;
 
     }
-
-    private float every = 0.15f;
-    private float time = 0f;
 
     private bool hasNone() {
 
@@ -755,45 +810,45 @@ public class Board : MonoBehaviour {
     }
 
     private void regen() {
-        time += Time.deltaTime;
-
-        if (time < every)
-        {
-
-           return;
-
-        }
-        else {
-
-            time = 0f;
-
-        }
 
         for (int x = 0; x < width; x++)
         {
             bool b = false;
             int wy = 0;
+            Vector3? point = null;
 
             for (int y = 0; y < height; y++)
             {
                 Dot d = dots[x, y];
 
-                if (d.getType() == HeroType.NONE)
+                if (!otstoi.Contains(d))
                 {
 
-                    Debug.Log("" + d.getX() + ":" + d.getY() + " none");
+                    if (!b && d.getType() == HeroType.NONE)
+                    {
 
-                    b = true;
-                    wy = y;
+                        b = true;
+                        wy = y;
 
-                }
-                else if (b)
-                {
+                    }
+                    else if (b && d.getType() != HeroType.NONE)
+                    {
+                        Dot d2 = dots[x, wy];
 
-                    dots[x, wy].setType(d.getType(), false);
-                    dots[x, wy].setDLCType(d.getDLCType());
-                    d.setType(HeroType.NONE, false);
-                    wy += 1;
+                        d.setY(wy);
+                        d.getObject().name = "(" + d.getX() + ";" + d.getY() + ")";
+                        d.setPoint(positions[x, wy]);
+                        dots[x, y] = d2;
+                        d2.setY(y);
+                        d2.getObject().transform.position = positions[x, y];
+                        d2.getObject().name = "(" + d2.getX() + ";" + d2.getY() + ")";
+                        dots[x, wy] = d;
+
+                        queue.Add(d);
+
+                        wy += 1;
+
+                    }
 
                 }
 
@@ -803,78 +858,23 @@ public class Board : MonoBehaviour {
 
         for (int x = 0; x < width; x++)
         {
-            Dot d = dots[x, height - 1];
+            float i = 1;
 
-            if (d.getType() == HeroType.NONE)
-            {
+            for (int y = 0; y < height; y++) {
+                Dot d = dots[x, y];
+                if (d.getType() != HeroType.NONE) continue;
 
                 HeroType r = Dot.random();
                 d.setType(r, false);
-                Debug.Log("random is " + d.getType());
+                d.getObject().transform.position = new Vector3(positions[x, height - 1].x, positions[x, height - 1].y + (y_difference * i), positions[x, height - 1].z);
+                d.setPoint(positions[x, y]);
+                i++;
+                queue.Add(d);
 
-                if (r == HeroType.BLUE && blueCounter >= need)
+                foreach (Counter c in counters.Values)
                 {
-                    DLCType? t = getType(data.blue);
 
-                    if (t != null)
-                    {
-
-                        d.setDLCType((DLCType)t);
-                        blueCounter -= need;
-
-                    }
-
-                }
-                else if (r == HeroType.GREEN && greenCounter >= need)
-                {
-                    DLCType? t = getType(data.green);
-
-                    if (t != null)
-                    {
-
-                        d.setDLCType((DLCType)t);
-                        greenCounter -= need;
-
-                    }
-
-                }
-                else if (r == HeroType.LIGHTGREEN && lightgreenCounter >= need)
-                {
-                    DLCType? t = getType(data.lightgreen);
-
-                    if (t != null)
-                    {
-
-                        d.setDLCType((DLCType)t);
-                        lightgreenCounter -= need;
-
-                    }
-
-                }
-                else if (r == HeroType.ORANGE && orangeCounter >= need)
-                {
-                    DLCType? t = getType(data.orange);
-
-                    if (t != null)
-                    {
-
-                        d.setDLCType((DLCType)t);
-                        orangeCounter -= need;
-
-                    }
-
-                }
-                else if (r == HeroType.PINK && pinkCounter >= need)
-                {
-                    DLCType? t = getType(data.pink);
-
-                    if (t != null)
-                    {
-
-                        d.setDLCType((DLCType)t);
-                        pinkCounter -= need;
-
-                    }
+                    c.check();
 
                 }
 
@@ -891,51 +891,31 @@ public class Board : MonoBehaviour {
             if (selected.Count >= 3) {
                 Dot d = c.getDot();
 
+                Debug.Log(d.getX() + ";" + d.getY());
+
                 if (!selected.Contains(d) && (c.getAddict().getDLCType() == DLCType.HORIZONTAL || c.getAddict().getDLCType() == DLCType.BOMB || c.getAddict().getDLCType() == DLCType.VERTICAL)) {
 
-                    if (d.getType() == HeroType.BLUE)
-                    {
+                    if (counters != null && counters.ContainsKey(d.getType())) {
 
-                        blueCounter += 1;
-                        checkBar(HeroType.BLUE);
-
-                    }
-                    else if (d.getType() == HeroType.ORANGE)
-                    {
-
-                        orangeCounter += 1;
-                        checkBar(HeroType.ORANGE);
+                        Counter counter = counters[d.getType()];
+                        counter.counter++;
+                        counter.update();
 
                     }
-                    else if (d.getType() == HeroType.GREEN)
+
+                    if (targets != null && targets.ContainsKey(d.getType()))
                     {
 
-                        greenCounter += 1;
-                        checkBar(HeroType.GREEN);
-
-                    }
-                    else if (d.getType() == HeroType.LIGHTGREEN)
-                    {
-
-                        lightgreenCounter += 1;
-                        checkBar(HeroType.LIGHTGREEN);
-
-                    }
-                    else if (d.getType() == HeroType.PINK)
-                    {
-
-                        pinkCounter += 1;
-                        checkBar(HeroType.PINK);
+                        Target t = targets[d.getType()];
+                        t.minus(1);
+                        t.update();
+                        checkForComplete();
 
                     }
 
                 }
 
-                if (d.getType() != HeroType.CONCRETE && (c.getAddict().getDLCType() == DLCType.HORIZONTAL || c.getAddict().getDLCType() == DLCType.BOMB || c.getAddict().getDLCType() == DLCType.VERTICAL)) {
-
-                    d.setType(HeroType.NONE, false);
-
-                }
+                d.setType(HeroType.NONE, false);
             } else if (c.getAddict().getDLCType() == DLCType.ADJACENT) {
 
                 c.getDot().turnBack();
@@ -943,6 +923,16 @@ public class Board : MonoBehaviour {
             }
 
             c.destroy();
+
+        }
+
+    }
+
+    private void checkForLose() {
+
+        if (steps.isLocked()) {
+
+            popups[PopupType.LOSE].activate();
 
         }
 
