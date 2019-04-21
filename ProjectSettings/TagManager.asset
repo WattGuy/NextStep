@@ -22,6 +22,9 @@ TagManager:
   - Energy
   - LevelButton
   - PopupCanvas
+  - ShopIcons
+  - ShopIcon
+  - ShopItem
   layers:
   - Default
   - TransparentFX
@@ -31,7 +34,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - Particles
   - 
   - 
   - 

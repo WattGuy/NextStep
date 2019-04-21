@@ -28,6 +28,8 @@ public class Board : MonoBehaviour {
     public GameObject _target;
     public static GameObject target;
 
+    //public GameObject explosion;
+
     public static float y_difference;
 
     public float lineWidth = 2;
@@ -43,17 +45,19 @@ public class Board : MonoBehaviour {
     public static Vector3[,] positions;
     public static Dot[,] dots;
 
-    public static GameData data;
-
     public static bool selecting = false;
     public static List<Dot> selected = new List<Dot>();
     public static List<GameObject> lines = new List<GameObject>();
     public static bool staying = false;
+    public List<Dot> selection = new List<Dot>();
 
     public static Board instance = null;
     public static bool paused = false;
 
-    public static Resources rs;
+    public Material _outline;
+    public static Material outline;
+
+    public static Resources rs = null;
 
     public int default_steps = 30;
     public StepsCounter steps = null;
@@ -69,9 +73,9 @@ public class Board : MonoBehaviour {
 
         circle = _circle;
         target = _target;
+        outline = _outline;
 
-        data = Saver.load();
-        rs = new Resources();
+        if (rs == null) rs = new Resources();
 
         if (counters == null) {
             counters = new Dictionary<HeroType, Counter>();
@@ -105,12 +109,12 @@ public class Board : MonoBehaviour {
 
         }
 
-        if (Levels.level != null)
+        if (ContentManager.level != null)
         {
             targets = new Dictionary<HeroType, Target>();
             List<HeroType> was = new List<HeroType>();
 
-            foreach (TargetData t in Levels.level.targets)
+            foreach (TargetData t in ContentManager.level.targets)
             {
                 HeroType? ht = t.getType();
                 if (ht == null) continue;
@@ -121,7 +125,7 @@ public class Board : MonoBehaviour {
 
             }
 
-            steps = new StepsCounter(Levels.level.steps);
+            steps = new StepsCounter(ContentManager.level.steps);
 
         }
         else {
@@ -136,7 +140,7 @@ public class Board : MonoBehaviour {
         dots = new Dot[width, height];
         positions = new Vector3[width, height + 1];
         Setup();
-	}
+    }
 
     private bool allTargetsIsCompleted() {
 
@@ -210,10 +214,10 @@ public class Board : MonoBehaviour {
 
         y_difference = positions[0, height - 1].y - positions[0, height - 2].y;
 
-        if (Levels.level == null) return;
+        if (ContentManager.level == null) return;
         else {
 
-            foreach (DotData d in Levels.level.dots) {
+            foreach (DotData d in ContentManager.level.dots) {
                 string[] s = d.position.Split(':');
                 if (s.Length < 2) continue;
 
@@ -228,6 +232,11 @@ public class Board : MonoBehaviour {
                 if (ht == null) continue;
 
                 dots[(int)x, (int)y].setType((HeroType) ht, false);
+
+                DLCType? dt = d.getDType();
+                if (dt == null) continue;
+
+                dots[(int)x, (int)y].setDLCType((DLCType)dt);
 
             }
 
@@ -247,6 +256,41 @@ public class Board : MonoBehaviour {
         catch (Exception e) { }
 
         return null;
+
+    }
+
+    void updateSelection() {
+        List<Dot> remove = new List<Dot>();
+
+        foreach (Dot d in selection)
+        {
+
+            if (!selected.Contains(d)) {
+
+                d.select(false);
+                remove.Add(d);
+
+            }
+
+        }
+
+        foreach (Dot d in remove) {
+
+            selection.Remove(d);
+
+        }
+
+        foreach (Dot d in selected)
+        {
+
+            if (!selection.Contains(d)) {
+
+                d.select(true);
+                selection.Add(d);
+
+            }
+
+        }
 
     }
 
@@ -538,6 +582,8 @@ public class Board : MonoBehaviour {
             staying = true;
             fading();
 
+            updateSelection();
+
             Debug.Log(d.getX() + ":" + d.getY() + " STARTED");
 
         }
@@ -611,6 +657,8 @@ public class Board : MonoBehaviour {
 
                     fading();
 
+                    updateSelection();
+
                     Debug.Log(d.getX() + ":" + d.getY() + " BACKED");
 
                 }
@@ -627,6 +675,7 @@ public class Board : MonoBehaviour {
 
                     drawLines();
                     fading();
+                    updateSelection();
 
                 }
 
@@ -658,7 +707,7 @@ public class Board : MonoBehaviour {
 
                 }
 
-                d.getObject().transform.position = Vector3.LerpUnclamped(d.getObject().transform.position, (Vector3) down, 5f * Time.deltaTime);
+                d.getObject().transform.position = Vector3.MoveTowards(d.getObject().transform.position, (Vector3) down, 20f * Time.deltaTime);
 
             }
 
@@ -710,6 +759,22 @@ public class Board : MonoBehaviour {
     private void checkForComplete() {
 
         if (allTargetsIsCompleted()) {
+
+            GameData d;
+            if (ContentManager.data == null)
+            {
+
+                d = new GameData();
+
+            }
+            else d = ContentManager.data;
+
+            if (ContentManager.id != 0 && ContentManager.id > d.last_level) {
+
+                d.last_level = ContentManager.id;
+                Saver.save(d);
+
+            }
 
             popups[PopupType.WIN].activate();
 
@@ -771,10 +836,24 @@ public class Board : MonoBehaviour {
 
             drawLines();
             fading();
+            updateSelection();
+            Dictionary<HeroType, List<Dot>> dict = getDots();
 
-            foreach (Counter c in counters.Values) {
+            foreach (Counter c in counters.Values)
+            {
 
-                c.check();
+                if (dict.ContainsKey(c.getHero()))
+                {
+
+                    c.check(dict[c.getHero()]);
+
+                }
+                else
+                {
+
+                    c.check(new List<Dot>());
+
+                }
 
             }
 
@@ -856,6 +935,7 @@ public class Board : MonoBehaviour {
 
         }
 
+        bool b2 = false;
         for (int x = 0; x < width; x++)
         {
             float i = 1;
@@ -870,13 +950,28 @@ public class Board : MonoBehaviour {
                 d.setPoint(positions[x, y]);
                 i++;
                 queue.Add(d);
+                b2 = true;
 
-                foreach (Counter c in counters.Values)
-                {
+            }
 
-                    c.check();
+        }
 
-                }
+        if (!b2) return; 
+        Dictionary<HeroType, List<Dot>> dict = getDots();
+
+        foreach (Counter c in counters.Values)
+        {
+
+            if (dict.ContainsKey(c.getHero()))
+            {
+
+                c.check(dict[c.getHero()]);
+
+            }
+            else
+            {
+
+                c.check(new List<Dot>());
 
             }
 
@@ -890,8 +985,6 @@ public class Board : MonoBehaviour {
 
             if (selected.Count >= 3) {
                 Dot d = c.getDot();
-
-                Debug.Log(d.getX() + ";" + d.getY());
 
                 if (!selected.Contains(d) && (c.getAddict().getDLCType() == DLCType.HORIZONTAL || c.getAddict().getDLCType() == DLCType.BOMB || c.getAddict().getDLCType() == DLCType.VERTICAL)) {
 
@@ -959,6 +1052,35 @@ public class Board : MonoBehaviour {
             else d.setFaded();
 
         }
+
+    }
+
+    private Dictionary<HeroType, List<Dot>> getDots() {
+        Dictionary<HeroType, List<Dot>> dict = new Dictionary<HeroType, List<Dot>>();
+
+        for (int x = 1; x < width - 1; x++)
+        {
+            for (int y = height - 1; y > 0; y--) {
+                Dot d = dots[x, y];
+
+                if (d.getType() == HeroType.NONE || d.getType() == HeroType.CONCRETE || d.getDLCType() != DLCType.NONE) continue;
+
+                List<Dot> l;
+                if (dict.ContainsKey(d.getType())) l = dict[d.getType()];
+                else {
+
+                    l = new List<Dot>();
+                    dict.Add(d.getType(), l);
+
+                }
+
+                l.Add(d);
+
+            }
+
+        }
+
+        return dict;
 
     }
 

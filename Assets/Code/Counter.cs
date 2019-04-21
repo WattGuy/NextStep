@@ -18,7 +18,13 @@ public class Counter {
         this.ht = ht;
         string s = TypeUtils.getName(ht).Replace(" ", "");
 
-        string data = (string) Board.data.GetType().GetField(ht.ToString().ToLower()).GetValue(Board.data);
+        if (ContentManager.data == null) {
+
+            ContentManager.data = Saver.load();
+
+        }
+
+        string data = (string) ContentManager.data.GetType().GetField(ht.ToString().ToLower()).GetValue(ContentManager.data);
         DLCType? type = getType(data);
 
         if (type != null) {
@@ -49,27 +55,26 @@ public class Counter {
 
     }
 
-    public void check() {
+    public void check(List<Dot> list) {
         if (!working) return;
 
         if (counter >= Board.need) {
 
-            foreach (Dot d in Board.dots)
+            foreach (Dot d in list)
             {
 
-                if (d.getType() == ht && d.getDLCType() == DLCType.NONE)
-                {
-
-                    d.setDLCType(type);
-                    counter -= Board.need;
-                    return;
-
-                }
+                d.setDLCType(type);
+                counter -= Board.need;
+                return;
 
             }
 
         }
 
+    }
+
+    public HeroType getHero() {
+        return ht;
     }
 
     private DLCType? getType(string s)

@@ -47,6 +47,19 @@ public class TypeUtils{
 
     }
 
+    public static DLCType? getDType(string s)
+    {
+
+        try
+        {
+            return (DLCType)Enum.Parse(typeof(DLCType), s);
+        }
+        catch (Exception ignored) { }
+
+        return null;
+
+    }
+
     public static string getName(HeroType ht) {
 
         if (ht == HeroType.BLUE)

@@ -149,12 +149,29 @@ public class Dot
     {
 
         sr.sprite = Dot.typeToSprite(ht, dt);
-        if (adjacent) {
+        if (adjacent)
+        {
             this.cacheht = this.ht;
             this.cachedt = this.dt;
         }
         this.ht = ht;
         this.dt = DLCType.NONE;
+
+    }
+
+    public void select(bool b) {
+
+        if (b)
+        {
+
+            go.GetComponent<SpriteRenderer>().material = Board.outline;
+
+        }
+        else {
+
+            go.GetComponent<SpriteRenderer>().material = new Material(Shader.Find("Sprites/Default"));
+
+        }
 
     }
 

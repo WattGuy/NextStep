@@ -35,17 +35,26 @@ public class DotData
 
     public string position = "";
     public string type = "";
+    public string dtype = "";
 
-    public DotData(HeroType ht, string position) {
+    public DotData(HeroType ht, DLCType dt, string position) {
 
         this.position = position;
         type = ht.ToString();
+        dtype = dt.ToString();
 
     }
 
     public HeroType? getType() {
 
         return TypeUtils.getType(type);
+
+    }
+
+    public DLCType? getDType()
+    {
+
+        return TypeUtils.getDType(dtype);
 
     }
 
@@ -72,11 +81,13 @@ public class LevelData {
 [System.Serializable]
 public class GameData {
 
-    public string blue = DLCType.VERTICAL.ToString();
-    public string green = DLCType.HORIZONTAL.ToString();
-    public string lightgreen = DLCType.BOMB.ToString();
-    public string orange = DLCType.BOMB.ToString();
-    public string pink = DLCType.BOMB.ToString();
+    public string blue = "";
+    public string green = "";
+    public string lightgreen = "";
+    public string orange = "";
+    public string pink = "";
+    public int last_level = 0;
+    public List<String> purchases = new List<String>();
 
 }
 
@@ -110,7 +121,6 @@ public static class Saver{
 
         BinaryFormatter f = new BinaryFormatter();
         string path = Application.persistentDataPath + "/" + file;
-        Debug.Log(path);
         FileStream stream = new FileStream(path, FileMode.Create);
 
         f.Serialize(stream, d);
@@ -134,7 +144,6 @@ public static class Saver{
         }
         else {
 
-            Debug.LogError("Save file not found in " + path);
             return new GameData();
 
         }
