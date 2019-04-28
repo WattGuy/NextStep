@@ -10,7 +10,38 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (transform.parent.tag == "ShopItem" && name == "Buy")
+
+        if (tag == "Crate") {
+            if (ContentManager.data.keys <= 0 || GetComponent<ButtonColorText>() == null) return;
+
+            Destroy(GetComponent<ButtonColorText>());
+            CrateManager.open(Int32.Parse(name));
+
+        }
+        else if (name == "Crates") {
+
+            SceneManager.LoadScene("crates");
+
+        }
+        else if (name == "PlayLevel")
+        {
+
+            if (ContentManager.data.energy >= ContentManager.level.energy) {
+
+                ContentManager.data.energy -= ContentManager.level.energy;
+                Saver.save(ContentManager.data);
+                Bars.checkTimer();
+                SceneManager.LoadScene("game");
+
+            }
+
+        }
+        else if (name == "Return") {
+
+            ContentManager.levelPopup.unactivate();
+
+        }
+        else if (transform.parent.tag == "ShopItem" && name == "Buy")
         {
 
             if (!(ContentManager.data != null && ContentManager.data.purchases != null)) return;
@@ -19,7 +50,7 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
 
             if (dt == null) return;
 
-            ShopManager.BuyItem((DLCType) dt);
+            ShopManager.BuyItem((DLCType)dt);
 
         }
         else if (transform.parent.tag == "ShopItem" && name == "Takeoff")
@@ -33,7 +64,7 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
 
             if (dt == null) return;
 
-            ShopManager.SelectItem((DLCType) dt);
+            ShopManager.SelectItem((DLCType)dt);
 
         }
         else if (tag == "ShopIcon") {
@@ -64,16 +95,10 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
 
             ContentManager.id = i2;
             ContentManager.level = d;
-            SceneManager.LoadScene("game");
+            ContentManager.levelPopup.activate();
 
         }
         else if ("Settings" == name)
-        {
-
-
-
-        }
-        else if ("About" == name)
         {
 
 

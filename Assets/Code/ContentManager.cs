@@ -27,6 +27,8 @@ public class ContentManager : MonoBehaviour
 
     private RectTransform contentRect;
     private Vector2 contentVector;
+    private int priority;
+    private bool good = false;
 
     private int selectedPanID;
     private bool isScrolling;
@@ -35,6 +37,9 @@ public class ContentManager : MonoBehaviour
 
     public static GameData data = null;
     public static int id = 0;
+    public static Popup levelPopup = null;
+    public GameObject _targetPopup;
+    public static GameObject targetPopup;
 
     private int getNumber(int i) {
 
@@ -54,8 +59,13 @@ public class ContentManager : MonoBehaviour
         instPans = new GameObject[panCount];
         pansPos = new Vector2[panCount];
         pansScale = new Vector2[panCount];
+        levelPopup = new Popup(PopupType.LEVEL);
+        targetPopup = _targetPopup;
+
+        if (Board.rs == null) Board.rs = new Resources();
 
         if (data == null) data = Saver.load();
+        priority = getNumber(data.last_level + 1);
 
         int i = 0;
         int hi = 1;
@@ -85,6 +95,7 @@ public class ContentManager : MonoBehaviour
                             instPans[h].transform.localPosition.y + plusy);
                         pansPos[h] = -instPans[h].transform.localPosition;
                     }
+
                 }
 
                 levels.Add(hi, asset);
@@ -121,6 +132,8 @@ public class ContentManager : MonoBehaviour
             hi++;
         }
 
+        contentRect.anchoredPosition = new Vector2(pansPos[priority].x, contentRect.anchoredPosition.y);
+
     }
 
     private void FixedUpdate()
@@ -137,11 +150,13 @@ public class ContentManager : MonoBehaviour
                 selectedPanID = i;
             }
         }
+
         float scrollVelocity = Mathf.Abs(scrollRect.velocity.x);
         if (scrollVelocity < 400 && !isScrolling) scrollRect.inertia = false;
         if (isScrolling || scrollVelocity > 400) return;
         contentVector.x = Mathf.SmoothStep(contentRect.anchoredPosition.x, pansPos[selectedPanID].x, snapSpeed * Time.fixedDeltaTime);
         contentRect.anchoredPosition = contentVector;
+
     }
 
     public void Scrolling(bool scroll)

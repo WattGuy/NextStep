@@ -17,6 +17,7 @@ public class ShopManager : MonoBehaviour {
     public static Dictionary<DLCType, GameObject> dict = new Dictionary<DLCType, GameObject>();
 
     void Start() {
+
         content = this.gameObject;
         item = _item;
         outline = _outline;
@@ -46,14 +47,39 @@ public class ShopManager : MonoBehaviour {
 
     }
 
-    public static void BuyItem(DLCType dt) {
+    private static int getPrice(DLCType dt) {
 
-        string s = ShopManager.selected.ToString() + ":" + ((DLCType)dt).ToString();
+        switch (dt)
+        {
+            case DLCType.VERTICAL:
+                return 100;
+            case DLCType.HORIZONTAL:
+                return 150;
+            case DLCType.ADJACENT:
+                return 200;
+            case DLCType.BOMB:
+                return 300;
+            case DLCType.NONE:
+                return 0;
+        }
+
+        return 0;
+
+    }
+
+    public static void BuyItem(DLCType dt2) {
+
+        string s = ShopManager.selected.ToString() + ":" + ((DLCType)dt2).ToString();
 
         if (ContentManager.data.purchases.Contains(s)) return;
+        if (ContentManager.data.coins < getPrice(dt2)) return; 
 
         ContentManager.data.purchases.Add(s);
-        foreach (Transform child in dict[dt].transform) {
+        ContentManager.data.coins -= getPrice(dt2);
+        Saver.save(ContentManager.data);
+        Bars.update();
+
+        foreach (Transform child in dict[dt2].transform) {
 
             if (child.name == "Buy") {
 
@@ -62,6 +88,37 @@ public class ShopManager : MonoBehaviour {
             } else if (child.name == "Puton") {
 
                 child.gameObject.SetActive(true);
+
+            }
+
+        }
+
+        foreach (DLCType dt in Enum.GetValues(typeof(DLCType)).Cast<DLCType>()) {
+
+            foreach (Transform child in dict[dt].transform) {
+
+                if (child.name == "Buy" && (ContentManager.data.purchases.Contains(selected.ToString() + ":" + dt.ToString()) || dt == DLCType.NONE || ContentManager.data.coins < getPrice(dt)))
+                {
+
+                    child.gameObject.SetActive(false);
+
+                }
+                else if (child.name == "Nuy") {
+
+                    child.gameObject.SetActive(true);
+
+                }
+
+                if (child.name == "NotEnoughMoney" && (ContentManager.data.purchases.Contains(selected.ToString() + ":" + dt.ToString()) || dt == DLCType.NONE || ContentManager.data.coins >= getPrice(dt)))
+                {
+
+                    child.gameObject.SetActive(false);
+
+                } else if (child.name == "NotEnoughMoney") {
+
+                    child.gameObject.SetActive(true);
+
+                }
 
             }
 
@@ -126,6 +183,7 @@ public class ShopManager : MonoBehaviour {
         {
 
             foreach (HeroType ht in Enum.GetValues(typeof(HeroType)).Cast<HeroType>()) {
+
                 if (child.name != TypeUtils.getName(ht).Replace(" ", "")) continue;
                 string ds = (string)ContentManager.data.GetType().GetField(ht.ToString().ToLower()).GetValue(ContentManager.data);
                 DLCType? main = TypeUtils.getDType(ds);
@@ -165,9 +223,15 @@ public class ShopManager : MonoBehaviour {
 
                     child.GetComponent<Image>().sprite = Board.rs.sprites[new KeyValuePair<HeroType, DLCType>(ht, dt)];
 
-                } else if (child.name == "Price" && dt == DLCType.NONE) {
+                }
 
-                    child.gameObject.SetActive(false);
+                if (child.name == "Price") {
+                    if (dt == DLCType.NONE) child.gameObject.SetActive(false);
+                    else {
+
+                        child.GetComponent<Text>().text = getPrice(dt) + " Монет";
+
+                    }
 
                 }
 
@@ -177,7 +241,14 @@ public class ShopManager : MonoBehaviour {
 
                 }
 
-                if (child.name == "Buy" && (ContentManager.data.purchases.Contains(ht.ToString() + ":" + dt.ToString()) || dt == DLCType.NONE)) {
+                if (child.name == "Buy" && (ContentManager.data.purchases.Contains(ht.ToString() + ":" + dt.ToString()) || dt == DLCType.NONE || ContentManager.data.coins < getPrice(dt))) {
+
+                    child.gameObject.SetActive(false);
+
+                } 
+
+                if (child.name == "NotEnoughMoney" && (ContentManager.data.purchases.Contains(ht.ToString() + ":" + dt.ToString()) || dt == DLCType.NONE || ContentManager.data.coins >= getPrice(dt)))
+                {
 
                     child.gameObject.SetActive(false);
 
@@ -195,19 +266,21 @@ public class ShopManager : MonoBehaviour {
 
         }
 
-        foreach (Transform child in GameObject.FindGameObjectWithTag("ShopIcons").transform) {
+        foreach (Transform child in GameObject.FindGameObjectWithTag("ShopIcons").transform)
+        {
 
-            if (child.name == TypeUtils.getName(ht).Replace(" ", "")) {
+            if (child.name == TypeUtils.getName(ht).Replace(" ", ""))
+            {
 
-                child.GetComponent<Image>().material = ShopManager.outline;
-
-            } else if (child.name == TypeUtils.getName(selected).Replace(" ", "")) {
-
-                Image img = child.GetComponent<Image>();
-                img.material = img.defaultMaterial;
+                child.GetComponent<Image>().material = null;
 
             }
+            else
+            {
 
+                child.GetComponent<Image>().material = outline;
+
+            }
         }
 
         selected = ht;

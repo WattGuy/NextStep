@@ -2,12 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Popup {
 
     private PopupType pt;
     private GameObject go = null;
-    private Dictionary<string, Transform> childs = new Dictionary<string, Transform>();
 
     public Popup(PopupType pt) {
 
@@ -38,8 +38,107 @@ public class Popup {
 
     public void activate() {
         if (go == null) return;
+        if (Board.rs == null) Board.rs = new Resources();
+
+        if (pt == PopupType.LEVEL) {
+
+            foreach (Transform child in go.transform) {
+
+                if (child.name == "Level") {
+
+                    child.GetComponent<Text>().text = "УРОВЕНЬ " + ContentManager.id;
+
+                }
+                else if (child.name == "Grid")
+                {
+
+                    foreach (Transform child2 in child.transform)
+                    {
+                        GameObject.Destroy(child2.gameObject);
+                    }
+
+                    foreach (TargetData td in ContentManager.level.targets) {
+                        HeroType? ht = td.getType();
+                        if (ht != null)
+                        {
+
+                            Sprite s = Board.rs.sprites[new KeyValuePair<HeroType, DLCType>((HeroType)ht, DLCType.NONE)];
+                            ContentManager.targetPopup.GetComponent<Image>().sprite = s;
+                            ContentManager.targetPopup.GetComponentInChildren<Text>().text = td.target.ToString();
+                            GameObject.Instantiate(ContentManager.targetPopup, child);
+
+                        }
+                        else {
+                            OnType? ot = td.getOType();
+                            if (ot == null) continue;
+
+                            Sprite s = Board.rs.ons[(OnType) ot];
+                            ContentManager.targetPopup.GetComponent<Image>().sprite = s;
+                            ContentManager.targetPopup.GetComponentInChildren<Text>().text = td.target.ToString();
+                            GameObject.Instantiate(ContentManager.targetPopup, child);
+
+                        }
+
+                    }
+
+                }
+                else if (child.name == "PlayLevel") {
+
+                    if (ContentManager.data.energy >= ContentManager.level.energy)
+                    {
+                        child.gameObject.SetActive(true);
+
+                        foreach (Transform child2 in child.transform)
+                        {
+
+                            if (child2.name == "Number")
+                            {
+
+                                child2.GetComponent<Text>().text = ContentManager.level.energy.ToString();
+
+                            }
+
+                        }
+
+                    }
+                    else child.gameObject.SetActive(false);
+
+                }
+                else if (child.name == "NotEnoughEnergy")
+                {
+
+                    if (ContentManager.data.energy < ContentManager.level.energy)
+                    {
+                        child.gameObject.SetActive(true);
+
+                        foreach (Transform child2 in child.transform)
+                        {
+
+                            if (child2.name == "Number")
+                            {
+
+                                child2.GetComponent<Text>().text = ContentManager.level.energy.ToString();
+
+                            }
+
+                        }
+
+                    }
+                    else child.gameObject.SetActive(false);
+
+                }
+
+            }
+
+        }
 
         go.SetActive(true);
+
+    }
+
+    public GameObject GetGameObject() {
+
+        return go;
 
     }
 

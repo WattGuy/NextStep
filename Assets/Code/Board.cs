@@ -20,6 +20,7 @@ public class Board : MonoBehaviour {
     public static List<Circle> circles = new List<Circle>();
     public Dictionary<HeroType, Counter> counters = null;
     public Dictionary<HeroType, Target> targets = null;
+    public Dictionary<OnType, Target> otargets = null;
     public Dictionary<PopupType, Popup> popups = null;
 
     public static int width;
@@ -27,8 +28,6 @@ public class Board : MonoBehaviour {
 
     public GameObject _target;
     public static GameObject target;
-
-    //public GameObject explosion;
 
     public static float y_difference;
 
@@ -65,6 +64,9 @@ public class Board : MonoBehaviour {
     public static List<Dot> otstoi = new List<Dot>();
 
     void Start () {
+        List<DotData> datas = new List<DotData>();
+        datas.Add(new DotData(HeroType.BLUE, DLCType.NONE, OnType.NONE, "5:5"));
+
         instance = this;
         paused = false;
         selected = new List<Dot>();
@@ -109,19 +111,28 @@ public class Board : MonoBehaviour {
 
         }
 
-        if (ContentManager.level != null)
-        {
+        if (ContentManager.level != null) {
+            otargets = new Dictionary<OnType, Target>();
             targets = new Dictionary<HeroType, Target>();
-            List<HeroType> was = new List<HeroType>();
 
             foreach (TargetData t in ContentManager.level.targets)
             {
                 HeroType? ht = t.getType();
-                if (ht == null) continue;
+                if (ht != null)
+                {
 
-                if (was.Contains((HeroType)ht)) continue;
-                targets.Add((HeroType)ht, new Target((HeroType)ht, t.target));
-                was.Add((HeroType)ht);
+                    if (targets.ContainsKey((HeroType)ht)) continue;
+                    targets.Add((HeroType)ht, new Target((HeroType) ht, t.target));
+
+                } else {
+                    OnType? ot = t.getOType();
+
+                    if (ot == null) continue;
+                    if (otargets.ContainsKey((OnType) ot)) continue;
+
+                    otargets.Add((OnType)ot, new Target((OnType)ot, t.target));
+
+                }
 
             }
 
@@ -159,6 +170,18 @@ public class Board : MonoBehaviour {
 
             }
 
+            foreach (Target t in otargets.Values)
+            {
+
+                if (!t.isDone())
+                {
+
+                    return false;
+
+                }
+
+            }
+
         }
         else return false;
 
@@ -169,6 +192,114 @@ public class Board : MonoBehaviour {
     private bool isLocked() {
 
         return allTargetsIsCompleted() || steps.isLocked() || paused;
+
+    }
+
+    private List<Dot> getIceArea(Dot b) {
+        List<Dot> ds = new List<Dot>();
+
+        ds.Add(b);
+
+        for (int x = -1; x <= 1; x++)
+        {
+            if (x == 0) continue;
+
+            Dot d = isSet(b.getX() + x, b.getY());
+
+            if (d != null && d.getType() != HeroType.NONE && d.getType() != HeroType.CONCRETE)
+            {
+
+                ds.Add(d);
+
+            }
+
+        }
+
+        for (int y = -1; y <= 1; y++)
+        {
+            if (y == 0) continue;
+
+            Dot d = isSet(b.getX(), b.getY() + y);
+
+            if (d != null && d.getType() != HeroType.NONE && d.getType() != HeroType.CONCRETE)
+            {
+
+                ds.Add(d);
+
+            }
+
+        }
+
+        return ds;
+
+    }
+
+    private void OHit(Dot d) {
+
+        if (d.getOType() == OnType.ICE)
+        {
+
+            if (otargets.ContainsKey(d.getOType())) {
+
+                otargets[d.getOType()].minus(1);
+                otargets[d.getOType()].update();
+
+            }
+
+            d.setOType(OnType.NONE);
+
+        }
+
+    }
+
+    private void checkForIce() {
+        if (selected.Count < 3) return;
+        List<Dot> was = new List<Dot>();
+        List<Circle> remove = new List<Circle>();
+
+        foreach (Circle c in circles)
+        {
+
+            if (c.getDot().getOType() != OnType.NONE)
+            {
+
+                if (!was.Contains(c.getDot()))
+                {
+                    OHit(c.getDot());
+                    was.Add(c.getDot());
+                }
+
+                remove.Add(c);
+                break;
+
+            }
+
+        }
+
+        foreach (Circle c in remove)
+        {
+
+            c.destroy();
+            circles.Remove(c);
+
+        }
+
+        foreach (Dot d in selected) {
+            List<Dot> area = getIceArea(d);
+
+            foreach (Dot ice in area) {
+
+                if (ice != null && ice.getOType() != OnType.NONE && !was.Contains(ice))
+                {
+
+                    OHit(ice);
+                    was.Add(ice);
+
+                }
+
+            }
+
+        }
 
     }
 
@@ -234,9 +365,10 @@ public class Board : MonoBehaviour {
                 dots[(int)x, (int)y].setType((HeroType) ht, false);
 
                 DLCType? dt = d.getDType();
-                if (dt == null) continue;
+                if (dt != null) dots[(int)x, (int)y].setDLCType((DLCType)dt);
 
-                dots[(int)x, (int)y].setDLCType((DLCType)dt);
+                OnType? ot = d.getOType();
+                if (ot != null) dots[(int)x, (int)y].setOType((OnType)ot);
 
             }
 
@@ -556,6 +688,7 @@ public class Board : MonoBehaviour {
 
             foreach (Dot i in ds)
             {
+                if (i.getOType() != OnType.NONE) continue;
 
                 i.setType(addict.getType(), true);
                 circles.Add(new Circle(i, addict, false));
@@ -571,7 +704,7 @@ public class Board : MonoBehaviour {
         if (!selecting && !isLocked())
         {
             Dot d = Dot.has(GetMouseCameraPoint());
-            if (d == null || d.getType() == HeroType.NONE || d.getType() == HeroType.CONCRETE) return;
+            if (d == null || d.getType() == HeroType.NONE || d.getType() == HeroType.CONCRETE || d.getOType() == OnType.ICE) return;
 
             selected.Clear();
             selected.Add(d);
@@ -662,7 +795,7 @@ public class Board : MonoBehaviour {
                     Debug.Log(d.getX() + ":" + d.getY() + " BACKED");
 
                 }
-                else if (d != last && d.getType() == last.getType() && !selected.Contains(d) && Dot.inRadius(last, d))
+                else if (d != last && d.getType() == last.getType() && !selected.Contains(d) && Dot.inRadius(last, d) && d.getOType() != OnType.ICE)
                 {
                     Debug.Log(d.getX() + ":" + d.getY() + " ADDED");
 
@@ -700,7 +833,8 @@ public class Board : MonoBehaviour {
 
                 }
 
-                if (Vector3.Distance(d.getObject().transform.position, (Vector3)down).ToString("0.00") == "0.00") {
+                if (Vector3.Distance(d.getObject().transform.position, (Vector3) down) < 0.01f)
+                {
 
                     remove.Add(d);
                     continue;
@@ -769,12 +903,17 @@ public class Board : MonoBehaviour {
             }
             else d = ContentManager.data;
 
-            if (ContentManager.id != 0 && ContentManager.id > d.last_level) {
+            if (ContentManager.id != 0 && ContentManager.id > d.last_level)
+            {
 
                 d.last_level = ContentManager.id;
+                d.keys += 3;
                 Saver.save(d);
 
             }
+            else
+                foreach (Transform child in popups[PopupType.WIN].GetGameObject().transform) 
+                    if (child.name == "Crates") child.name = "Quit";
 
             popups[PopupType.WIN].activate();
 
@@ -794,6 +933,7 @@ public class Board : MonoBehaviour {
 
             }
 
+            checkForIce();
             removeCircles();
             circles.Clear();
 

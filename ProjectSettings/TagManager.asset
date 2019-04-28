@@ -25,6 +25,11 @@ TagManager:
   - ShopIcons
   - ShopIcon
   - ShopItem
+  - LevelPopup
+  - Crate
+  - Coins
+  - Keys
+  - EnergyTime
   layers:
   - Default
   - TransparentFX

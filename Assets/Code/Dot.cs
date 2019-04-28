@@ -13,6 +13,7 @@ public class Dot
     private HeroType? cacheht = null;
     private DLCType? cachedt = null;
     private DLCType dt = DLCType.NONE;
+    private OnType ot = OnType.NONE;
     private Vector3? point = null;
 
     public Dot(int x, int y, GameObject go, HeroType ht)
@@ -120,6 +121,32 @@ public class Dot
         animation.Stop();
         go.transform.eulerAngles = new Vector3(0f, 0f, 0f);
 
+    }
+
+    public void setOType(OnType ot) {
+
+        foreach (Transform child in go.transform) {
+
+            Debug.Log(child.name + " - " + ot + " - " + this.ot.ToString().ToLower());
+
+            if (child.name == ot.ToString().ToLower()) {
+
+                child.gameObject.SetActive(true);
+
+            } else if (child.name == this.ot.ToString().ToLower()) {
+
+                child.gameObject.SetActive(false);
+
+            }
+
+        }
+
+        this.ot = ot;
+
+    }
+
+    public OnType getOType() {
+        return ot;
     }
 
     public HeroType getType()

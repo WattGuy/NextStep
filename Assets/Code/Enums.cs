@@ -25,11 +25,19 @@ public enum DLCType
 
 }
 
+public enum OnType {
+
+    ICE,
+    NONE
+
+}
+
 public enum PopupType {
 
     PAUSE,
     LOSE,
-    WIN
+    WIN,
+    LEVEL
 
 }
 
@@ -57,6 +65,31 @@ public class TypeUtils{
         catch (Exception ignored) { }
 
         return null;
+
+    }
+
+    public static OnType? getOType(string s)
+    {
+
+        try
+        {
+            return (OnType) Enum.Parse(typeof(OnType), s);
+        }
+        catch (Exception ignored) { }
+
+        return null;
+
+    }
+
+    public static string getName(OnType ot) {
+
+        if (ot == OnType.ICE)
+        {
+
+            return "Ice";
+
+        }
+        else return "";
 
     }
 

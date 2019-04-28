@@ -10,12 +10,14 @@ public class TargetData
 {
 
     public string type = "";
+    public string otype = "";
     public int target = 0;
 
-    public TargetData(HeroType ht, int i)
+    public TargetData(string type, string otype, int i)
     {
 
-        type = ht.ToString();
+        this.type = type;
+        this.otype = otype;
         target = i;
 
     }
@@ -24,6 +26,13 @@ public class TargetData
     {
 
         return TypeUtils.getType(type);
+
+    }
+
+    public OnType? getOType()
+    {
+
+        return TypeUtils.getOType(otype);
 
     }
 
@@ -36,12 +45,14 @@ public class DotData
     public string position = "";
     public string type = "";
     public string dtype = "";
+    public string otype = "";
 
-    public DotData(HeroType ht, DLCType dt, string position) {
+    public DotData(HeroType ht, DLCType dt, OnType ot, string position) {
 
         this.position = position;
         type = ht.ToString();
         dtype = dt.ToString();
+        otype = ot.ToString();
 
     }
 
@@ -58,6 +69,13 @@ public class DotData
 
     }
 
+    public OnType? getOType()
+    {
+
+        return TypeUtils.getOType(otype);
+
+    }
+
 }
 
 [System.Serializable]
@@ -66,12 +84,14 @@ public class LevelData {
     public DotData[] dots;
     public TargetData[] targets;
     public int steps;
+    public int energy = 1;
 
-    public LevelData(DotData[] dots, TargetData[] targets, int steps) {
+    public LevelData(DotData[] dots, TargetData[] targets, int steps, int energy) {
 
         this.dots = dots;
         this.targets = targets;
         this.steps = steps;
+        this.energy = energy;
 
     }
 
@@ -88,6 +108,13 @@ public class GameData {
     public string pink = "";
     public int last_level = 0;
     public List<String> purchases = new List<String>();
+    public int keys = 0;
+    public int coins = 0;
+    public int energy = 0;
+    public int energy_max = 10;
+    public long time = 0;
+    public long complete = 0;
+    public int last_reward = 0;
 
 }
 
@@ -104,6 +131,17 @@ public static class Saver{
         stream.Close();
     }
 
+    private static void fixProblems(GameData d) {
+
+        if (d.energy_max < 10) {
+
+            d.energy_max = 10;
+            save(d);
+
+        }
+
+    }
+
     public static LevelData loadLevel(string s)
     {
         LevelData d = null;
@@ -113,6 +151,8 @@ public static class Saver{
             d = (LevelData) JsonUtility.FromJson(s, typeof(LevelData));
         }
         catch (Exception e) { }
+
+        if (d != null && d.energy <= 0) d.energy = 1;
 
         return d;
     }
@@ -139,12 +179,18 @@ public static class Saver{
             GameData d = f.Deserialize(stream) as GameData;
             stream.Close();
 
+            fixProblems(d);
+           
             return d;
 
         }
         else {
 
-            return new GameData();
+            GameData d = new GameData();
+            fixProblems(d);
+            d.energy = d.energy_max;
+
+            return d;
 
         }
 
