@@ -72,7 +72,7 @@ public class Popup {
                             OnType? ot = td.getOType();
                             if (ot == null) continue;
 
-                            Sprite s = Board.rs.ons[(OnType) ot];
+                            Sprite s = Board.rs.ons[(OnType)ot];
                             ContentManager.targetPopup.GetComponent<Image>().sprite = s;
                             ContentManager.targetPopup.GetComponentInChildren<Text>().text = td.target.ToString();
                             GameObject.Instantiate(ContentManager.targetPopup, child);
@@ -125,6 +125,62 @@ public class Popup {
 
                     }
                     else child.gameObject.SetActive(false);
+
+                }
+
+            }
+
+        } else if (pt == PopupType.LOSE) {
+
+            foreach (Transform child in go.transform) {
+
+                if (child.name == "Restart" && ContentManager.data.energy >= ContentManager.level.energy)
+                {
+                    child.gameObject.SetActive(true);
+
+                    foreach (Transform schild in child.transform)
+                    {
+                        if (schild.name != "Number") continue;
+
+                        schild.GetComponent<Text>().text = ContentManager.level.energy.ToString();
+                        break;
+
+                    }
+
+                }
+                else if (child.name == "Restart")
+                    child.gameObject.SetActive(false);
+
+                if (child.name == "RestartNotEnough" && ContentManager.data.energy < ContentManager.level.energy)
+                {
+                    child.gameObject.SetActive(true);
+
+                    foreach (Transform schild in child.transform)
+                    {
+                        if (schild.name != "Number") continue;
+
+                        schild.GetComponent<Text>().text = ContentManager.level.energy.ToString();
+                        break;
+
+                    }
+
+                }
+                else if (child.name == "RestartNotEnough")
+                    child.gameObject.SetActive(false);
+
+            }
+
+        } else if (pt == PopupType.PAUSE) {
+
+            foreach (Transform child in go.transform)
+            {
+                if (child.name != "Surrender") continue;
+
+                foreach (Transform schild in child.transform) {
+                    if (schild.name != "Number") continue;
+
+                    schild.GetComponent<Text>().text = (Board.instance.steps.getSteps() == ContentManager.level.steps ? "0" : "1");
+                    break;
 
                 }
 

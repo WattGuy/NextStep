@@ -27,8 +27,9 @@ public enum DLCType
 
 public enum OnType {
 
-    ICE,
-    NONE
+    ICE = 1,
+    CHAINS = 3,
+    NONE = 0
 
 }
 
@@ -87,6 +88,12 @@ public class TypeUtils{
         {
 
             return "Ice";
+
+        }
+        else if (ot == OnType.CHAINS)
+        {
+
+            return "Chains";
 
         }
         else return "";

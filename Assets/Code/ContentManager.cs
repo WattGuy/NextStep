@@ -6,16 +6,11 @@ using UnityEngine.UI;
 
 public class ContentManager : MonoBehaviour
 {
-
-    [Range(1, 50)]
     [Header("Controllers")]
     public int panCount;
     public int panOffset;
-    [Range(0f, 20f)]
     public float snapSpeed;
-    [Range(0f, 10f)]
     public float scaleOffset;
-    [Range(1f, 20f)]
     public float scaleSpeed;
     [Header("Other Objects")]
     public GameObject panPrefab;
@@ -156,7 +151,7 @@ public class ContentManager : MonoBehaviour
         if (isScrolling || scrollVelocity > 400) return;
         contentVector.x = Mathf.SmoothStep(contentRect.anchoredPosition.x, pansPos[selectedPanID].x, snapSpeed * Time.fixedDeltaTime);
         contentRect.anchoredPosition = contentVector;
-
+   
     }
 
     public void Scrolling(bool scroll)

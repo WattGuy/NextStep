@@ -11,7 +11,20 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
 
-        if (tag == "Crate") {
+        if (name == "Surrender") {
+
+            if (Board.instance.steps.getSteps() == ContentManager.level.steps) {
+
+                ContentManager.data.energy += 1;
+                Saver.save(ContentManager.data);
+                Bars.checkTimer();
+
+            }
+
+            SceneManager.LoadScene("levels");
+
+        }
+        else if (tag == "Crate") {
             if (ContentManager.data.keys <= 0 || GetComponent<ButtonColorText>() == null) return;
 
             Destroy(GetComponent<ButtonColorText>());
@@ -23,7 +36,7 @@ public class ButtonClick : MonoBehaviour, IPointerClickHandler
             SceneManager.LoadScene("crates");
 
         }
-        else if (name == "PlayLevel")
+        else if (name == "PlayLevel" || name == "Restart")
         {
 
             if (ContentManager.data.energy >= ContentManager.level.energy) {

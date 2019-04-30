@@ -14,6 +14,7 @@ public class Dot
     private DLCType? cachedt = null;
     private DLCType dt = DLCType.NONE;
     private OnType ot = OnType.NONE;
+    private int oi = 0;
     private Vector3? point = null;
 
     public Dot(int x, int y, GameObject go, HeroType ht)
@@ -123,11 +124,21 @@ public class Dot
 
     }
 
+    public int getOnInt() {
+
+        return oi;
+
+    }
+
+    public void setOnInt(int oi) {
+
+       this.oi = oi;
+
+    }
+
     public void setOType(OnType ot) {
 
         foreach (Transform child in go.transform) {
-
-            Debug.Log(child.name + " - " + ot + " - " + this.ot.ToString().ToLower());
 
             if (child.name == ot.ToString().ToLower()) {
 
@@ -141,6 +152,7 @@ public class Dot
 
         }
 
+        this.oi = (int) ot;
         this.ot = ot;
 
     }
